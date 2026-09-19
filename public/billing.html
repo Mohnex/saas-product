@@ -158,7 +158,15 @@ const BACKEND_BASE_URL = "https://mohsen-financial-server-production.up.railway.
                     <p class="text-[11px] text-apple-gray">اشترك الآن لاستعادة الوصول الكامل لبياناتك</p>`;
             }
         }
-
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAuK1IQ8zRmjsDftK8I7H4JXxJyUtxutUs",
+  authDomain: "saaas-financial-app.firebaseapp.com",
+  projectId: "saaas-financial-app",
+  storageBucket: "saaas-financial-app.firebasestorage.app",
+  messagingSenderId: "651398866959",
+  appId: "1:651398866959:web:e559136d9fbf0cdc289b7a",
+  measurementId: "G-S58X950PX4"
+};
         async function init() {
             if (!FIREBASE_CONFIG.apiKey) {
                 showToast('لم تُضبط إعدادات فايربيس بعد في هذا الملف.');
