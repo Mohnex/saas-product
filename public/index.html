@@ -183,33 +183,33 @@ const firebaseConfig = {
                         return false;
                     }
                     const idToken = await cred.user.getIdToken();
-                    const initResponse = await fetch(`${BACKEND_BASE_URL}/api/initialize-customer`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${idToken}`
-                        },
-                        body: JSON.stringify({ displayName })
-                    });
-                    if (!initResponse.ok) {
-                        const errData = await initResponse.json().catch(() => ({}));
-                        throw new Error(errData.error || 'تعذر إعداد حسابك على الخادم.');
-                    }
-                    showToast('تم إنشاء حسابك بنجاح! 🎉');
-                    window.location.href = '/onboarding.html';
-                } else {
-                    await authModule.signInWithEmailAndPassword(auth, email, password);
-                    window.location.href = '/app.html';
-                }
-            } catch (err) {
-                console.error(err);
-                showError(err.code ? friendlyAuthError(err.code) : err.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-            }
-            return false;
-        };
+const initResponse = await fetch('https://mohsen-financial-server-production.up.railway.app/api/initialize-customer', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ displayName })
+});
+if (!initResponse.ok) {
+    const errData = await initResponse.json().catch(() => ({}));
+    throw new Error(errData.error || 'تعذر إعداد حسابك على الخادم.');
+}
+showToast('تم إنشاء حسابك بنجاح! 🎉');
+window.location.href = '/onboarding.html';
+} else {
+    await authModule.signInWithEmailAndPassword(auth, email, password);
+    window.location.href = '/app.html';
+}
+} catch (err) {
+    console.error(err);
+    showError(err.code ? friendlyAuthError(err.code) : err.message);
+} finally {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+}
+return false;
+};
 
         window.handleForgotPassword = async function() {
             const email = document.getElementById('input-email').value.trim();
