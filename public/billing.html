@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>الاشتراك والدفع | مخطط الادخار</title>
+    <meta name="theme-color" content="#007AFF">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                colors: { apple: { blue: '#007AFF', green: '#34C759', orange: '#FF9500', red: '#FF3B30', gray: '#8E8E93', bg: '#F0F4F8' } },
+                fontFamily: { sans: ['Cairo', '-apple-system', 'sans-serif'] }
+            } }
+        };
+    </script>
+    <style>
+        body { font-family: 'Cairo', sans-serif; -webkit-font-smoothing: antialiased; }
+        .card { background: #fff; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 8px 30px rgba(0,0,0,0.06); border-radius: 24px; }
+        .big-btn { min-height: 56px; }
+        .method-card { border: 2px solid #e5e5e5; transition: all 0.2s; cursor: pointer; }
+        .method-card.selected { border-color: #007AFF; background: rgba(0,122,255,0.05); }
+    </style>
+</head>
+<body class="bg-apple-bg text-neutral-900 min-h-screen">
+
+    <div class="max-w-lg mx-auto px-4 py-6 space-y-5 pb-24">
+
+        <div class="flex items-center gap-3 mb-2">
+            <div class="bg-apple-blue/10 w-11 h-11 rounded-2xl flex items-center justify-center">
+                <i class="fa-solid fa-crown text-lg text-apple-blue"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-black">الاشتراك والدفع</h1>
+                <p id="subscription-status-text" class="text-[11px] text-apple-gray font-bold">جاري التحقق من حالة اشتراكك...</p>
+            </div>
+        </div>
+
+        <!-- حالة الاشتراك الحالية -->
+        <div id="current-status-card" class="card p-5 hidden"></div>
+
+        <!-- خطة الاشتراك -->
+        <div class="card p-6 text-center bg-gradient-to-br from-apple-blue/5 to-transparent">
+            <p class="text-xs font-bold text-apple-gray mb-1">الخطة الشهرية</p>
+            <p class="text-3xl font-black text-apple-blue mb-1"><span id="price-display">١٥,٠٠٠ د.ع</span></p>
+            <p class="text-[10px] text-apple-gray font-semibold">شهرياً، يمكن الإلغاء في أي وقت</p>
+        </div>
+
+        <!-- اختيار طريقة الدفع -->
+        <div class="space-y-3">
+            <p class="text-xs font-bold text-apple-gray px-1">اختر طريقة الدفع</p>
+
+            <div id="method-zaincash" onclick="selectMethod('zaincash')" class="method-card card p-4 flex items-center gap-3">
+                <div class="bg-orange-500/10 w-11 h-11 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-wallet text-orange-500"></i>
+                </div>
+                <div class="flex-grow">
+                    <p class="text-sm font-bold">زين كاش</p>
+                    <p class="text-[10px] text-apple-gray">يتطلب تجديداً يدوياً كل شهر (تذكير تلقائي)</p>
+                </div>
+                <i class="fa-solid fa-circle-check text-apple-blue opacity-0 selected-check"></i>
+            </div>
+
+            <div id="method-card" onclick="selectMethod('card')" class="method-card card p-4 flex items-center gap-3">
+                <div class="bg-indigo-500/10 w-11 h-11 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-credit-card text-indigo-500"></i>
+                </div>
+                <div class="flex-grow">
+                    <p class="text-sm font-bold">بطاقة Mastercard / Visa</p>
+                    <p class="text-[10px] text-apple-gray">تجديد تلقائي كامل - لا حاجة لأي إجراء شهري</p>
+                </div>
+                <i class="fa-solid fa-circle-check text-apple-blue opacity-0 selected-check"></i>
+            </div>
+        </div>
+
+        <button id="pay-btn" onclick="handlePay()" disabled class="w-full bg-apple-blue text-white font-black py-4 rounded-2xl text-sm big-btn opacity-50">
+            <span id="pay-btn-label">اختر طريقة دفع أولاً</span>
+        </button>
+
+        <p class="text-center text-[10px] text-apple-gray font-semibold pt-2">
+            بالدفع، أنت توافق على <a href="/terms.html" class="text-apple-blue">الشروط والأحكام</a>
+        </p>
+    </div>
+
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-neutral-900 text-white text-sm font-bold px-6 py-3.5 rounded-2xl shadow-2xl max-w-[90vw] text-center"></div>
+
+    <script type="module">
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAuK1IQ8zRmjsDftK8I7H4JXxJyUtxutUs",
+  authDomain: "saaas-financial-app.firebaseapp.com",
+  projectId: "saaas-financial-app",
+  storageBucket: "saaas-financial-app.firebasestorage.app",
+  messagingSenderId: "651398866959",
+  appId: "1:651398866959:web:e559136d9fbf0cdc289b7a",
+  measurementId: "G-S58X950PX4"
+};
+        // ⚠️ نفس رابط الخادم المستخدم في auth.html - يجب أن يكون مطابقاً تماماً
+const BACKEND_BASE_URL = "https://mohsen-financial-server-production.up.railway.app";
+        let auth = null, db = null, currentUser = null;
+        let selectedMethod = null;
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3500);
+        }
+
+        window.selectMethod = function(method) {
+            selectedMethod = method;
+            ['zaincash', 'card'].forEach(m => {
+                const el = document.getElementById(`method-${m}`);
+                const check = el.querySelector('.selected-check');
+                if (m === method) {
+                    el.classList.add('selected');
+                    check.classList.remove('opacity-0');
+                } else {
+                    el.classList.remove('selected');
+                    check.classList.add('opacity-0');
+                }
+            });
+            const payBtn = document.getElementById('pay-btn');
+            const payLabel = document.getElementById('pay-btn-label');
+            payBtn.disabled = false;
+            payBtn.classList.remove('opacity-50');
+            payLabel.innerText = method === 'zaincash' ? 'الدفع عبر زين كاش' : 'الدفع بالبطاقة';
+        };
+
+        function formatSubDate(ms) {
+            return new Date(ms).toLocaleDateString('ar-IQ', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function renderSubscriptionStatus(sub) {
+            const statusText = document.getElementById('subscription-status-text');
+            const statusCard = document.getElementById('current-status-card');
+            if (!sub) return;
+
+            statusCard.classList.remove('hidden');
+            const now = Date.now();
+
+            if (sub.status === 'trial' && sub.trialEndsAt > now) {
+                statusText.innerHTML = '<span class="text-apple-blue">فترتك التجريبية فعّالة</span>';
+                statusCard.innerHTML = `
+                    <p class="text-xs font-bold text-apple-blue mb-1"><i class="fa-solid fa-hourglass-half"></i> فترتك التجريبية المجانية</p>
+                    <p class="text-[11px] text-apple-gray">تنتهي في ${formatSubDate(sub.trialEndsAt)} - اشترك الآن لتفادي انقطاع الخدمة</p>`;
+            } else if (sub.status === 'active') {
+                statusText.innerHTML = '<span class="text-apple-green">اشتراكك فعّال ✓</span>';
+                statusCard.innerHTML = `
+                    <p class="text-xs font-bold text-apple-green mb-1"><i class="fa-solid fa-circle-check"></i> اشتراكك فعّال</p>
+                    <p class="text-[11px] text-apple-gray">ساري حتى ${formatSubDate(sub.currentPeriodEnd)}${sub.paymentMethod === 'zaincash' ? ' - تذكّر التجديد اليدوي عبر زين كاش قبل هذا التاريخ' : ' - سيتجدد تلقائياً'}</p>`;
+            } else {
+                statusText.innerHTML = '<span class="text-apple-red">اشتراكك منتهٍ</span>';
+                statusCard.innerHTML = `
+                    <p class="text-xs font-bold text-apple-red mb-1"><i class="fa-solid fa-triangle-exclamation"></i> اشتراكك منتهٍ</p>
+                    <p class="text-[11px] text-apple-gray">اشترك الآن لاستعادة الوصول الكامل لبياناتك</p>`;
+            }
+        }
+
+        async function init() {
+            if (!FIREBASE_CONFIG.apiKey) {
+                showToast('لم تُضبط إعدادات فايربيس بعد في هذا الملف.');
+                return;
+            }
+            const appModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+            const authModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+            const firestoreModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+            const app = appModule.initializeApp(FIREBASE_CONFIG);
+            auth = authModule.getAuth(app);
+            db = firestoreModule.getFirestore(app);
+            window._fs = firestoreModule;
+
+            authModule.onAuthStateChanged(auth, async (user) => {
+                if (!user) { window.location.href = '/auth.html'; return; }
+                currentUser = user;
+                const customerSnap = await firestoreModule.getDoc(firestoreModule.doc(db, 'customers', user.uid));
+                if (customerSnap.exists()) {
+                    renderSubscriptionStatus(customerSnap.data().subscription);
+                }
+            });
+        }
+        init();
+
+        window.handlePay = async function() {
+            if (!selectedMethod || !currentUser) return;
+            if (!BACKEND_BASE_URL) {
+                showToast('لم يُضبط رابط الخادم الخلفي (BACKEND_BASE_URL) بعد في هذا الملف.');
+                return;
+            }
+            const btn = document.getElementById('pay-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+
+            try {
+                const redirectUrl = window.location.origin + '/billing.html';
+                const idToken = await currentUser.getIdToken();
+                const endpoint = selectedMethod === 'zaincash' ? 'create-zaincash-payment' : 'create-card-payment';
+
+                const response = await fetch(`${BACKEND_BASE_URL}/api/${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ redirectUrl })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'تعذر بدء عملية الدفع.');
+                }
+                window.location.href = result.paymentUrl;
+            } catch (err) {
+                console.error(err);
+                showToast(err.message && err.message.includes('غير مفعّل')
+                    ? err.message
+                    : (err.message || 'تعذر بدء عملية الدفع، حاول مجدداً.'));
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        };
+
+        // معالجة العودة من بوابة الدفع (status=success أو status=failed بالرابط)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('status') === 'success') {
+            showToast('✅ تم الدفع بنجاح! جاري تفعيل اشتراكك...');
+        } else if (urlParams.get('status') === 'failed') {
+            showToast('❌ فشلت عملية الدفع، حاول مجدداً.');
+        }
+    </script>
+</body>
+</html>

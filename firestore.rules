@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ====== بيانات كل عميل: محصورة بحسابه الحقيقي هو فقط ======
+    // بخلاف تطبيقك الشخصي (الذي استخدم الدخول المجهول)، هذا المنتج يستخدم
+    // حسابات حقيقية (بريد إلكتروني/كلمة مرور)، لذا مطابقة request.auth.uid
+    // تعمل بشكل صحيح وآمن فعلياً - كل عميل له معرّف دخول ثابت وحقيقي خاص به
+    // لا يتغيّر بين أجهزته.
+    match /customers/{customerId} {
+      allow read, update: if request.auth != null && request.auth.uid == customerId;
+      // الإنشاء الأول فقط عبر Cloud Function (Admin SDK) عند التسجيل، لضمان
+      // إنشاء سجل الاشتراك الافتراضي (فترة تجريبية) بشكل صحيح دائماً.
+      allow create: if false;
+      allow delete: if false;
+
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == customerId;
+      }
+    }
+
+    // ====== سجل المدفوعات: قراءة فقط لصاحبها، لا كتابة من العميل مباشرة ======
+    // كل عملية دفع تُنشأ وتُحدَّث فقط من Cloud Functions (بعد التحقق الفعلي
+    // من بوابة الدفع)، أبداً من المتصفح مباشرة - لمنع أي عميل من التلاعب
+    // بحالة دفعته وتفعيل اشتراك دون دفع حقيقي.
+    match /payments/{paymentId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.customerId;
+      allow write: if false;
+    }
+
+    // ====== إعدادات عامة للمنتج (خطط الأسعار مثلاً) - قراءة عامة فقط ======
+    match /product_config/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

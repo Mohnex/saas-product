@@ -1,0 +1,21 @@
+{
+  "name": "financial-planner-backend",
+  "description": "الخادم الخلفي المجاني (Render) - يستبدل Firebase Cloud Functions المدفوعة",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^12.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "axios": "^1.7.7"
+  },
+  "private": true
+}
