@@ -199,14 +199,14 @@ const BACKEND_BASE_URL = "https://mohsen-financial-server-production.up.railway.
                 const idToken = await currentUser.getIdToken();
                 const endpoint = selectedMethod === 'zaincash' ? 'create-zaincash-payment' : 'create-card-payment';
 
-                const response = await fetch(`${BACKEND_BASE_URL}/api/${endpoint}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${idToken}`
-                    },
-                    body: JSON.stringify({ redirectUrl })
-                });
+                const response = await fetch(`https://mohsen-financial-server-production.up.railway.app/api/${endpoint}`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ redirectUrl })
+});
 
                 const result = await response.json();
                 if (!response.ok) {
